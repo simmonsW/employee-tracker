@@ -43,11 +43,12 @@ const menuArr = [
 ];
 
 function viewAllEmployees() {
-  const sql = `SELECT employee.id,
+  const sql = `SELECT
+              employee.id,
               employee.first_name,
               employee.last_name,
               role.title AS title,
-              department.department_name,
+              department.department_name AS department,
               role.salary,
               CONCAT(manager.first_name, ' ' , manager.last_name) AS manager
               FROM employee
@@ -60,7 +61,31 @@ function viewAllEmployees() {
     console.table(' ', result);
     startPrompt();
   });
-}
+};
+
+function viewAllDepartments() {
+  const sql = `SELECT * FROM department`;
+  db.query(sql, (err, result) => {
+    if (err) throw err;
+    console.table(' ', result);
+    startPrompt();
+  });
+};
+
+function viewAllRoles() {
+  const sql = `SELECT
+              role.id AS id,
+              role.title AS title,
+              role.salary AS salary,
+              department.department_name AS department
+              FROM role
+              LEFT JOIN department ON role.department_id = department.id`;
+  db.query(sql, (err, result) => {
+    if (err) throw err;
+    console.table(' ', result);
+    startPrompt();
+  });
+};
 
 // start the inquirer prompt
 async function startPrompt() {
@@ -91,6 +116,7 @@ async function startPrompt() {
       break;
 
     case 'View All Roles':
+      viewAllRoles();
       break;
 
     case 'Add Role':
@@ -100,6 +126,7 @@ async function startPrompt() {
       break;
 
     case 'View All Departments':
+      viewAllDepartments();
       break;
 
     case 'Add Department':
