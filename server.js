@@ -58,6 +58,66 @@ const newDepartmentQuestionArr = [
   }
 ];
 
+const newRoleArr = (departmentChoices) => [
+  {
+    type: 'input',
+    name: 'title',
+    message: 'What is the title for this role?',
+    validate: input => {
+      if (input) {
+        return true;
+      } else {
+        console.log('Please enter the title for the new role.');
+        return false;
+      };
+    }
+  },
+  {
+    type: 'input',
+    name: 'salary',
+    message: 'What is the salary for this role?',
+    validate: input => {
+      if (input) {
+        return true;
+      } else {
+        console.log('Please enter the salary for this new role.');
+        return false;
+      };
+    }
+  },
+  {
+    type: 'list',
+    name: 'department',
+    message: 'Which department does this role fall under?',
+    choices: departmentChoices,
+    validate: input => {
+      if (input) {
+        return true;
+      } else {
+        console.log('Please select a department for this role.');
+        return false;
+      };
+    }
+  }
+];
+
+const roleArr = (roleChoices) => [
+  {
+    type: 'list',
+    name: 'role',
+    message: 'Which role would you like to delete?',
+    choices: roleChoices,
+    validate: input => {
+      if (input) {
+        return true;
+      } else {
+        console.log('Please choose a role to delete.');
+        return false;
+      };
+    }
+  }
+];
+
 const departmentChoicesArr = (departmentChoices) => [
   {
     type: 'list',
@@ -111,10 +171,10 @@ function addDepartment(value) {
   });
 };
 
-function removeDepartment(value) {
+function removeDepartment(id) {
   const sql = `DELETE FROM department WHERE id = ?`;
 
-  db.query(sql, value, (err) => {
+  db.query(sql, id, (err) => {
     if (err) throw err;
   });
 };
@@ -140,7 +200,8 @@ function removeDepartmentPrompt() {
       value: row.id
     }));
 
-    inquirer.prompt(departmentChoicesArr(departmentChoices))
+    inquirer
+      .prompt(departmentChoicesArr(departmentChoices))
       .then(data => {
         const departmentToRemove = [
           data.department
@@ -157,7 +218,7 @@ function removeDepartmentPrompt() {
   });
 };
 
-function viewAllRoles() {
+function viewRoles(cb) {
   const sql = `SELECT
               role.id AS id,
               role.title AS title,
@@ -167,8 +228,78 @@ function viewAllRoles() {
               LEFT JOIN department ON role.department_id = department.id`;
   db.query(sql, (err, result) => {
     if (err) throw err;
+    cb(result);
+  });
+}
+
+function viewAllRoles() {
+  viewRoles(result => {
     console.table(' ', result);
     startPrompt();
+  });
+};
+
+function addRole(values) {
+  const sql = `INSERT INTO role (title, salary, department_id) VALUES (?,?,?)`;
+
+  db.query(sql, values, (err) => {
+    if (err) throw err;
+  });
+};
+
+function removeRole(id) {
+  const sql = `DELETE FROM role WHERE id = ?`;
+
+  db.query(sql, id, (err) => {
+    if (err) throw err;
+  });
+};
+
+function addRolePrompt() {
+  viewDepartments(rows => {
+    const departmentChoices = rows.map(row => ({
+      name: row.department_name,
+      value: row.id
+    }));
+
+    inquirer
+      .prompt(newRoleArr(departmentChoices))
+      .then(data => {
+        const params = [
+          data.title,
+          data.salary,
+          data.department
+        ];
+
+        addRole(params);
+        console.log(`Created ${data.title} successfully!`);
+        startPrompt();
+      });
+  });
+};
+
+function removeRolePrompt() {
+  viewRoles(rows => {
+    const roleChoices = rows.map(row => ({
+      name: row.title,
+      value: row.id
+    }));
+
+    inquirer
+      .prompt(roleArr(roleChoices))
+      .then(data => {
+        const params = [
+          data.role
+        ];
+
+        removeRole(params);
+        roleChoices.map(role => {
+          if (role.value === data.role) {
+            console.log(`You have deleted the role of ${role.name}.`);
+          }
+        });
+        startPrompt();
+      });
   });
 };
 
@@ -205,9 +336,11 @@ async function startPrompt() {
       break;
 
     case 'Add Role':
+      addRolePrompt();
       break;
 
     case 'Remove Role':
+      removeRolePrompt();
       break;
 
     case 'View All Departments':
