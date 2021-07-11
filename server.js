@@ -6,304 +6,43 @@ const db = require('./db/connection');
 const PORT = process.env.PORT || 3001;
 const app = express();
 
-// express middleware
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+const {
+  menuArr,
+  newDepartmentQsArr,
+  removeDepartmentQsArr,
+  viewByDepartmentQsArr,
+  newRoleQsArr,
+  roleQsArr,
+  addEmployeeQsArr,
+  removeEmployeeQsArr,
+  updateEmployeeRoleQsArr,
+  updateEmployeeManagerQsArr,
+  viewByManagerQsArr
+} = require('./queries/utils/helpers');
 
-const menuArr = [
-  {
-    type: 'list',
-    name: 'menu',
-    message: 'What would you like to do?',
-    choices: [
-      "I'm All Done",
-      'View All Employees',
-      'View All Employees by Department',
-      'View All Employees by Manager',
-      'Add Employee',
-      'Remove Employee',
-      'Update Employee Role',
-      'Update Employee Manager',
-      'View All Roles',
-      'Add Role',
-      'Remove Role',
-      'View All Departments',
-      'View Department Budget',
-      'Add Department',
-      'Remove Department'
-    ]
-  }
-];
+const {
+  viewEmployees,
+  viewEmployeesSimple,
+  addEmployee,
+  removeEmployee,
+  updateEmployeeRole,
+  updateEmployeeManager,
+  viewDepartments,
+  addDepartment,
+  removeDepartment,
+  viewRoles,
+  addRole,
+  removeRole
+} = require('./queries');
 
-const newDepartmentQuestionArr = [
-  {
-    type: 'input',
-    name: 'department',
-    message: "What is the name of this department?",
-    validate: input => {
-      if (input) {
-        return true;
-      } else {
-        console.log('Please enter the name of the new department.');
-        return false;
-      };
-    }
-  }
-];
-
-const newRoleQuestionArr = (departmentChoices) => [
-  {
-    type: 'input',
-    name: 'title',
-    message: 'What is the title for this role?',
-    validate: input => {
-      if (input) {
-        return true;
-      } else {
-        console.log('Please enter the title for the new role.');
-        return false;
-      };
-    }
-  },
-  {
-    type: 'input',
-    name: 'salary',
-    message: 'What is the salary for this role?',
-    validate: input => {
-      if (input) {
-        return true;
-      } else {
-        console.log('Please enter the salary for this new role.');
-        return false;
-      };
-    }
-  },
-  {
-    type: 'list',
-    name: 'department',
-    message: 'Which department does this role fall under?',
-    choices: departmentChoices,
-    validate: input => {
-      if (input) {
-        return true;
-      } else {
-        console.log('Please select a department for this role.');
-        return false;
-      };
-    }
-  }
-];
-
-const roleArr = (roleChoices) => [
-  {
-    type: 'list',
-    name: 'role',
-    message: 'Which role would you like to delete?',
-    choices: roleChoices,
-    validate: input => {
-      if (input) {
-        return true;
-      } else {
-        console.log('Please choose a role to delete.');
-        return false;
-      };
-    }
-  }
-];
-
-const departmentChoicesArr = (departmentChoices) => [
-  {
-    type: 'list',
-    name: 'department',
-    message: 'Which department would you like to remove?',
-    choices: departmentChoices
-  }
-];
-
-const addEmployeeQuestionArr = (roleChoices, managerChoices) => [
-  {
-    type: 'input',
-    name: 'first_name',
-    message: "What is the employee's first name?",
-    validate: input => {
-      if (input) {
-        return true;
-      } else {
-        console.log("Please enter the employee's first name.");
-        return false;
-      };
-    }
-  },
-  {
-    type: 'input',
-    name: 'last_name',
-    message: "What is the employee's last name?",
-    validate: input => {
-      if (input) {
-        return true;
-      } else {
-        console.log("Please enter the employee's last name.");
-        return false;
-      };
-    }
-  },
-  {
-    type: 'list',
-    name: 'role',
-    message: "What is the employee's role?",
-    choices: roleChoices,
-    validate: input => {
-      if (input) {
-        return true;
-      } else {
-        console.log('Please select a role for the employee.');
-        return false;
-      };
-    }
-  },
-  {
-    type: 'list',
-    name: 'manager',
-    message: "Who is the employee's manager?",
-    choices: managerChoices,
-    validate: input => {
-      if (input) {
-        return true;
-      } else {
-        console.log('Please choose a manager for the employee.');
-        return false;
-      };
-    }
-  }
-];
-
-const employeesArr = (employeeChoices) => [
-  {
-    type : 'list',
-    name: 'employee',
-    message: 'Who would you like to remove?',
-    choices: employeeChoices
-  }
-];
-
-const updateEmployeeRoleQuestionArr = (employeeChoices, roleChoices) => [
-  {
-    type: 'list',
-    name: 'name',
-    message: 'Which employee would you like to update?',
-    choices: employeeChoices
-  },
-  {
-    type: 'list',
-    name: 'role',
-    message: "What is this employee's new role?",
-    choices: roleChoices
-  }
-];
-
-const updateEmployeeManagerQuestionArr = (employeeChoices, managerChoices) => [
-  {
-    type: 'list',
-    name: 'name',
-    message: 'Which employee would you like to update?',
-    choices: employeeChoices
-  },
-  {
-    type: 'list',
-    name: 'manager',
-    message: "Who is the employee's new manager?",
-    choices: managerChoices
-  }
-];
-
-const viewByDepartmentQuestionArr = (departmentChoices) => [
-  {
-    type: 'list',
-    name: 'department',
-    message: 'Please select a department',
-    choices: departmentChoices
-  }
-];
-
-const viewByManagerQuestionArr = (managerChoices) => [
-  {
-    type: 'list',
-    name: 'manager',
-    message: 'Please select a manager.',
-    choices: managerChoices
-  }
-];
-
-function viewEmployeesSimple(cb) {
-  const sql = `SELECT
-              employee.id,
-              CONCAT(employee.first_name, ' ' , employee.last_name) AS name
-              FROM employee`;
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    cb(result);
-  });
-};
-
-function viewEmployees(cb) {
-  const sql = `SELECT
-              employee.id,
-              employee.first_name,
-              employee.last_name,
-              role.title AS title,
-              department.department_name AS department,
-              role.salary,
-              CONCAT(manager.first_name, ' ' , manager.last_name) AS manager
-              FROM employee
-              LEFT JOIN role ON employee.role_id = role.id
-              LEFT JOIN department ON role.department_id = department.id
-              LEFT JOIN employee AS manager ON employee.manager_id = manager.id
-              ORDER BY employee.id`;
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    cb(result);
-  });
-};
+//********************//
+//* EMPLOYEE PROMPTS *//
+//********************//
 
 function viewAllEmployees() {
   viewEmployees(result => {
     console.table(' ', result);
-    startPrompt()
-  });
-};
-
-function addEmployee(values) {
-  const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)`;
-
-  db.query(sql, values, (err) => {
-    if (err) throw err;
-  });
-};
-
-function removeEmployee(id) {
-  const sql = `DELETE FROM employee WHERE id = ?`;
-
-  db.query(sql, id, (err) => {
-    if (err) throw err;
-  });
-};
-
-function updateEmployeeRole(ids) {
-  const sql = `UPDATE employee
-              SET role_id = ?
-              WHERE id = ?`;
-
-  db.query(sql, ids, (err) => {
-    if (err) throw err;
-  });
-};
-
-function updateEmployeeManager(ids) {
-  const sql = `UPDATE employee
-              SET manager_id = ?
-              WHERE id = ?`;
-  db.query(sql, ids, (err) => {
-    if (err) throw err;
+    startPrompt();
   });
 };
 
@@ -326,7 +65,7 @@ function addEmployeePrompt() {
       managerChoices.push(noManager);
 
       inquirer
-        .prompt(addEmployeeQuestionArr(roleChoices, managerChoices))
+        .prompt(addEmployeeQsArr(roleChoices, managerChoices))
         .then(data => {
           const params = [
             data.first_name,
@@ -351,7 +90,7 @@ function removeEmployeePrompt() {
     }));
 
     inquirer
-      .prompt(employeesArr(employeeChoices))
+      .prompt(removeEmployeeQsArr(employeeChoices))
       .then(data => {
         const employeeToRemove = [
           data.employee
@@ -382,7 +121,7 @@ function updateEmployeeRolePrompt() {
       }));
 
       inquirer
-        .prompt(updateEmployeeRoleQuestionArr(employeeChoices, roleChoices))
+        .prompt(updateEmployeeRoleQsArr(employeeChoices, roleChoices))
         .then(data => {
           const params = [
             data.role,
@@ -421,7 +160,7 @@ function updateEmployeeManagerPrompt() {
       
 
       inquirer
-        .prompt(updateEmployeeManagerQuestionArr(employeeChoices, managerChoices))
+        .prompt(updateEmployeeManagerQsArr(employeeChoices, managerChoices))
         .then(data => {
           const params = [
             data.manager,
@@ -440,18 +179,123 @@ function updateEmployeeManagerPrompt() {
   });
 };
 
-function viewDepartments(cb) {
-  const sql = `SELECT * FROM department`;
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    cb(result);
+function viewByManagerPrompt() {
+  viewEmployeesSimple(rows => {
+    const managerChoices = rows.map(row => ({
+      name: row.name,
+        value: row.id
+    }));
+
+    inquirer
+      .prompt(viewByManagerQsArr(managerChoices))
+      .then(data => {
+        const managerId = [
+          data.manager
+        ];
+
+        const sql = `SELECT
+                    employee.id,
+                    employee.first_name,
+                    employee.last_name,
+                    role.title AS title,
+                    department.department_name AS department,
+                    role.salary AS salary,
+                    CONCAT(manager.first_name, ' ' , manager.last_name) AS manager
+                    FROM employee
+                    INNER JOIN role ON employee.role_id = role.id
+                    INNER JOIN department ON role.department_id = department.id
+                    INNER JOIN employee AS manager ON employee.manager_id = manager.id
+                    WHERE manager.id = ${managerId}`;
+        db.query(sql, managerId, (err, result) => {
+          if (err) throw err;
+          console.table(' ', result);
+          startPrompt();
+        });
+      });
   });
 };
+
+//**********************//
+//* DEPARTMENT PROMPTS *//
+//**********************//
 
 function viewAllDepartments() {
   viewDepartments(result => {
     console.table(' ', result);
     startPrompt();
+  });
+};
+
+function addDepartmentPrompt() {
+  inquirer
+    .prompt(newDepartmentQsArr)
+    .then(data => {
+      const newDepartment = [
+        data.department
+      ];
+
+      addDepartment(newDepartment);
+      console.log(`${newDepartment} has been created!`);
+      startPrompt();
+    });
+};
+
+function removeDepartmentPrompt() {
+  viewDepartments(rows => {
+    const departmentChoices = rows.map(row => ({
+      name: row.department_name,
+      value: row.id
+    }));
+
+    inquirer
+      .prompt(removeDepartmentQsArr(departmentChoices))
+      .then(data => {
+        const departmentToRemove = [
+          data.department
+        ];
+
+        removeDepartment(departmentToRemove);
+        departmentChoices.map(dept => {
+          if (dept.value === data.department) {
+            console.log(`You have deleted ${dept.name} from Departments`);
+          }
+        });
+        startPrompt();
+      });
+  });
+};
+
+function viewByDepartmentPrompt() {
+  viewDepartments(rows => {
+    const departmentChoices = rows.map(row => ({
+      name: row.department_name,
+      value: row.id
+    }));
+
+    inquirer
+      .prompt(viewByDepartmentQsArr(departmentChoices))
+      .then(data => {
+        const deptId = [
+          data.department
+        ];
+
+        const sql = `SELECT
+              department.department_name AS department,
+              employee.id,
+              employee.first_name,
+              employee.last_name,
+              role.title,
+              role.salary
+              FROM employee
+              INNER JOIN role ON employee.role_id = role.id
+              INNER JOIN department ON role.department_id = department.id
+              WHERE department.id = ${deptId}`;
+        db.query(sql, deptId, (err, result) => {
+          if (err) throw err;
+          console.table(' ', result);
+          startPrompt();
+        });
+      });
   });
 };
 
@@ -463,7 +307,7 @@ function viewDepartmentBudgetPrompt() {
     }));
 
     inquirer
-      .prompt(viewByDepartmentQuestionArr(departmentChoices))
+      .prompt(viewByDepartmentQsArr(departmentChoices))
       .then(data => {
         const deptId = [
           data.department
@@ -500,95 +344,14 @@ function viewDepartmentBudgetPrompt() {
   });
 };
 
-function addDepartment(value) {
-  const sql = `INSERT INTO department (department_name) VALUES (?)`;
-
-  db.query(sql, value, (err) => {
-    if (err) throw err;
-  });
-};
-
-function removeDepartment(id) {
-  const sql = `DELETE FROM department WHERE id = ?`;
-
-  db.query(sql, id, (err) => {
-    if (err) throw err;
-  });
-};
-
-function addDepartmentPrompt() {
-  inquirer
-    .prompt(newDepartmentQuestionArr)
-    .then(data => {
-      const newDepartment = [
-        data.department
-      ];
-
-      addDepartment(newDepartment);
-      console.log(`${newDepartment} has been created!`);
-      startPrompt();
-    });
-};
-
-function removeDepartmentPrompt() {
-  viewDepartments(rows => {
-    const departmentChoices = rows.map(row => ({
-      name: row.department_name,
-      value: row.id
-    }));
-
-    inquirer
-      .prompt(departmentChoicesArr(departmentChoices))
-      .then(data => {
-        const departmentToRemove = [
-          data.department
-        ];
-
-        removeDepartment(departmentToRemove);
-        departmentChoices.map(dept => {
-          if (dept.value === data.department) {
-            console.log(`You have deleted ${dept.name} from Departments`);
-          }
-        });
-        startPrompt();
-      });
-  });
-};
-
-function viewRoles(cb) {
-  const sql = `SELECT
-              role.id AS id,
-              role.title AS title,
-              role.salary AS salary,
-              department.department_name AS department
-              FROM role
-              LEFT JOIN department ON role.department_id = department.id`;
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    cb(result);
-  });
-}
+//****************//
+//* ROLE PROMPTS *//
+//****************//
 
 function viewAllRoles() {
   viewRoles(result => {
     console.table(' ', result);
     startPrompt();
-  });
-};
-
-function addRole(values) {
-  const sql = `INSERT INTO role (title, salary, department_id) VALUES (?,?,?)`;
-
-  db.query(sql, values, (err) => {
-    if (err) throw err;
-  });
-};
-
-function removeRole(id) {
-  const sql = `DELETE FROM role WHERE id = ?`;
-
-  db.query(sql, id, (err) => {
-    if (err) throw err;
   });
 };
 
@@ -600,7 +363,7 @@ function addRolePrompt() {
     }));
 
     inquirer
-      .prompt(newRoleQuestionArr(departmentChoices))
+      .prompt(newRoleQsArr(departmentChoices))
       .then(data => {
         const params = [
           data.title,
@@ -623,7 +386,7 @@ function removeRolePrompt() {
     }));
 
     inquirer
-      .prompt(roleArr(roleChoices))
+      .prompt(roleQsArr(roleChoices))
       .then(data => {
         const roleToRemove = [
           data.role
@@ -636,76 +399,6 @@ function removeRolePrompt() {
           }
         });
         startPrompt();
-      });
-  });
-};
-
-function viewByDepartmentPrompt() {
-  viewDepartments(rows => {
-    const departmentChoices = rows.map(row => ({
-      name: row.department_name,
-      value: row.id
-    }));
-
-    inquirer
-      .prompt(viewByDepartmentQuestionArr(departmentChoices))
-      .then(data => {
-        const deptId = [
-          data.department
-        ];
-
-        const sql = `SELECT
-              department.department_name AS department,
-              employee.id,
-              employee.first_name,
-              employee.last_name,
-              role.title,
-              role.salary
-              FROM employee
-              INNER JOIN role ON employee.role_id = role.id
-              INNER JOIN department ON role.department_id = department.id
-              WHERE department.id = ${deptId}`;
-        db.query(sql, deptId, (err, result) => {
-          if (err) throw err;
-          console.table(' ', result);
-          startPrompt();
-        });
-      });
-  });
-};
-
-function viewByManagerPrompt() {
-  viewEmployeesSimple(rows => {
-    const managerChoices = rows.map(row => ({
-      name: row.name,
-        value: row.id
-    }));
-
-    inquirer
-      .prompt(viewByManagerQuestionArr(managerChoices))
-      .then(data => {
-        const managerId = [
-          data.manager
-        ];
-
-        const sql = `SELECT
-                    employee.id,
-                    employee.first_name,
-                    employee.last_name,
-                    role.title AS title,
-                    department.department_name AS department,
-                    role.salary AS salary,
-                    CONCAT(manager.first_name, ' ' , manager.last_name) AS manager
-                    FROM employee
-                    INNER JOIN role ON employee.role_id = role.id
-                    INNER JOIN department ON role.department_id = department.id
-                    INNER JOIN employee AS manager ON employee.manager_id = manager.id
-                    WHERE manager.id = ${managerId}`;
-        db.query(sql, managerId, (err, result) => {
-          if (err) throw err;
-          console.table(' ', result);
-          startPrompt();
-        });
       });
   });
 };
