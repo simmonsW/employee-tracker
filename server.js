@@ -208,6 +208,21 @@ const updateEmployeeRoleQuestionArr = (employeeChoices, roleChoices) => [
   }
 ];
 
+const updateEmployeeManagerQuestionArr = (employeeChoices, managerChoices) => [
+  {
+    type: 'list',
+    name: 'name',
+    message: 'Which employee would you like to update?',
+    choices: employeeChoices
+  },
+  {
+    type: 'list',
+    name: 'manager',
+    message: "Who is the employee's new manager?",
+    choices: managerChoices
+  }
+];
+
 function viewEmployeesSimple(cb) {
   const sql = `SELECT
               employee.id,
@@ -272,6 +287,15 @@ function updateEmployeeRole(ids) {
               SET role_id = ?
               WHERE id = ?`;
 
+  db.query(sql, ids, (err) => {
+    if (err) throw err;
+  });
+};
+
+function updateEmployeeManager(ids) {
+  const sql = `UPDATE employee
+              SET manager_id = ?
+              WHERE id = ?`;
   db.query(sql, ids, (err) => {
     if (err) throw err;
   });
@@ -368,6 +392,45 @@ function updateEmployeeRolePrompt() {
               console.log(`Updated ${updatedEmployee.name}'s role successfully!`);
             }
           })
+          startPrompt();
+        });
+    });
+  });
+};
+
+function updateEmployeeManagerPrompt() {
+  viewEmployeesSimple(rows => {
+    const employeeChoices = rows.map(row => ({
+      name: row.name,
+      value: row.id
+    }));
+    
+    viewEmployeesSimple(rows => {
+      const managerChoices = rows.map(row => ({
+        name: row.name,
+        value: row.id
+      }));
+      const noManager = {
+        name: 'NONE',
+        value: null
+      };
+      managerChoices.push(noManager);
+      
+
+      inquirer
+        .prompt(updateEmployeeManagerQuestionArr(employeeChoices, managerChoices))
+        .then(data => {
+          const params = [
+            data.manager,
+            data.name
+          ];
+
+          updateEmployeeManager(params);
+          employeeChoices.map(employee => {
+            if (employee.value === data.name) {
+              console.log(`Updated ${employee.name}'s manager successfully!`);
+            }
+          });
           startPrompt();
         });
     });
@@ -558,6 +621,7 @@ async function startPrompt() {
       break;
 
     case 'Update Employee Manager':
+      updateEmployeeManagerPrompt();
       break;
 
     case 'View All Roles':
