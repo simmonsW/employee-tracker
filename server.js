@@ -11,13 +11,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // start server after db connection
-db.connect(err => {
-  if (err) throw err;
-  console.log('Database connected.');
-  app.listen(PORT, () => {
-    console.log(`server running on port ${PORT}`);
-  });
-});
+// db.connect(err => {
+  // if (err) throw err;
+  // console.log('Database connected.');
+  // app.listen(PORT, () => {
+//     console.log(`server running on port ${PORT}`);
+//   });
+// });
 
 const menuArr = [
   {
@@ -36,6 +36,7 @@ const menuArr = [
       'Add Role',
       'Remove Role',
       'View All Departments',
+      'View Department Budget',
       'Add Department',
       'Remove Department'
     ]
@@ -462,6 +463,51 @@ function viewAllDepartments() {
   });
 };
 
+function viewDepartmentBudgetPrompt() {
+  viewDepartments(rows => {
+    const departmentChoices = rows.map(row => ({
+      name: row.department_name,
+      value: row.id
+    }));
+
+    inquirer
+      .prompt(viewByDepartmentQuestionArr(departmentChoices))
+      .then(data => {
+        const deptId = [
+          data.department
+        ];
+
+        const sql = `SELECT
+              department.department_name AS department,
+              employee.id,
+              employee.first_name,
+              employee.last_name,
+              role.title,
+              role.salary
+              FROM employee
+              INNER JOIN role ON employee.role_id = role.id
+              INNER JOIN department ON role.department_id = department.id
+              WHERE department.id = ${deptId}`;
+        const sqlSum = `SELECT
+                        department.department_name AS department,
+                        SUM(salary) AS total_budget
+                        FROM role 
+                        LEFT JOIN department ON role.department_id = department.id
+                        WHERE department.id = ${deptId}`;
+        db.query(sql, deptId, (err, result) => {
+          if (err) throw err;
+          console.table(' ', result);
+          // startPrompt();
+          db.query(sqlSum, deptId, (err, result) => {
+            if (err) throw err;
+            console.table(result);
+            startPrompt();
+          });
+        });
+      });
+  });
+};
+
 function addDepartment(value) {
   const sql = `INSERT INTO department (department_name) VALUES (?)`;
 
@@ -722,6 +768,10 @@ async function startPrompt() {
       viewAllDepartments();
       break;
 
+    case 'View Department Budget':
+      viewDepartmentBudgetPrompt();
+      break;
+
     case 'Add Department':
       addDepartmentPrompt();
       break;
@@ -729,7 +779,18 @@ async function startPrompt() {
     case 'Remove Department':
       removeDepartmentPrompt();
       break;
+    
+    default:
+      break;
   }
 };
 
-startPrompt();
+// start server after db connection
+db.connect(err => {
+  if (err) throw err;
+  console.log('Database connected.');
+  app.listen(PORT, () => {
+    console.log(`server running on port ${PORT}`);
+    startPrompt();
+  });
+});
