@@ -223,6 +223,24 @@ const updateEmployeeManagerQuestionArr = (employeeChoices, managerChoices) => [
   }
 ];
 
+const viewByDepartmentQuestionArr = (departmentChoices) => [
+  {
+    type: 'list',
+    name: 'department',
+    message: 'Please select a department',
+    choices: departmentChoices
+  }
+];
+
+const viewByManagerQuestionArr = (managerChoices) => [
+  {
+    type: 'list',
+    name: 'manager',
+    message: 'Please select a manager.',
+    choices: managerChoices
+  }
+];
+
 function viewEmployeesSimple(cb) {
   const sql = `SELECT
               employee.id,
@@ -247,22 +265,17 @@ function viewEmployees(cb) {
               LEFT JOIN role ON employee.role_id = role.id
               LEFT JOIN department ON role.department_id = department.id
               LEFT JOIN employee AS manager ON employee.manager_id = manager.id
-              ORDER BY employee.id;`;
+              ORDER BY employee.id`;
   db.query(sql, (err, result) => {
     if (err) throw err;
     cb(result);
   });
 };
 
-// function viewManagers() {
-//   const sql = `SELECT * From employee
-//               WHERE manager_id IS NULL`
-// }
-
 function viewAllEmployees() {
   viewEmployees(result => {
     console.table(' ', result);
-    startPrompt();
+    startPrompt()
   });
 };
 
@@ -354,7 +367,7 @@ function removeEmployeePrompt() {
         removeEmployee(employeeToRemove);
         employeeChoices.map(employed => {
           if (employed.value === data.employee) {
-            console.log(`You have removed ${employed.name}.`);
+            console.log(`You have removed ${employed.name}`);
           }
         });
         startPrompt();
@@ -382,9 +395,6 @@ function updateEmployeeRolePrompt() {
             data.role,
             data.name
           ];
-
-          console.log(data.name);
-          console.log(data.role);
 
           updateEmployeeRole(params);
           employeeChoices.map(updatedEmployee => {
@@ -499,7 +509,7 @@ function removeDepartmentPrompt() {
         removeDepartment(departmentToRemove);
         departmentChoices.map(dept => {
           if (dept.value === data.department) {
-            console.log(`You have deleted ${dept.name} from Departments!`);
+            console.log(`You have deleted ${dept.name} from Departments`);
           }
         });
         startPrompt();
@@ -584,10 +594,80 @@ function removeRolePrompt() {
         removeRole(roleToRemove);
         roleChoices.map(role => {
           if (role.value === data.role) {
-            console.log(`You have deleted the role of ${role.name}.`);
+            console.log(`You have deleted the role of ${role.name}`);
           }
         });
         startPrompt();
+      });
+  });
+};
+
+function viewByDepartmentPrompt() {
+  viewDepartments(rows => {
+    const departmentChoices = rows.map(row => ({
+      name: row.department_name,
+      value: row.id
+    }));
+
+    inquirer
+      .prompt(viewByDepartmentQuestionArr(departmentChoices))
+      .then(data => {
+        const deptId = [
+          data.department
+        ];
+
+        const sql = `SELECT
+              department.department_name AS department,
+              employee.id,
+              employee.first_name,
+              employee.last_name,
+              role.title,
+              role.salary
+              FROM employee
+              INNER JOIN role ON employee.role_id = role.id
+              INNER JOIN department ON role.department_id = department.id
+              WHERE department.id = ${deptId}`;
+        db.query(sql, deptId, (err, result) => {
+          if (err) throw err;
+          console.table(' ', result);
+          startPrompt();
+        });
+      });
+  });
+};
+
+function viewByManagerPrompt() {
+  viewEmployeesSimple(rows => {
+    const managerChoices = rows.map(row => ({
+      name: row.name,
+        value: row.id
+    }));
+
+    inquirer
+      .prompt(viewByManagerQuestionArr(managerChoices))
+      .then(data => {
+        const managerId = [
+          data.manager
+        ];
+
+        const sql = `SELECT
+                    employee.id,
+                    employee.first_name,
+                    employee.last_name,
+                    role.title AS title,
+                    department.department_name AS department,
+                    role.salary AS salary,
+                    CONCAT(manager.first_name, ' ' , manager.last_name) AS manager
+                    FROM employee
+                    INNER JOIN role ON employee.role_id = role.id
+                    INNER JOIN department ON role.department_id = department.id
+                    INNER JOIN employee AS manager ON employee.manager_id = manager.id
+                    WHERE manager.id = ${managerId}`;
+        db.query(sql, managerId, (err, result) => {
+          if (err) throw err;
+          console.table(' ', result);
+          startPrompt();
+        });
       });
   });
 };
@@ -603,9 +683,11 @@ async function startPrompt() {
       break;
 
     case 'View All Employees by Department':
+      viewByDepartmentPrompt();
       break;
 
     case 'View All Employees by Manager':
+      viewByManagerPrompt();
       break;
 
     case 'Add Employee':
