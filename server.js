@@ -193,6 +193,21 @@ const employeesArr = (employeeChoices) => [
   }
 ];
 
+const updateEmployeeRoleQuestionArr = (employeeChoices, roleChoices) => [
+  {
+    type: 'list',
+    name: 'name',
+    message: 'Which employee would you like to update?',
+    choices: employeeChoices
+  },
+  {
+    type: 'list',
+    name: 'role',
+    message: "What is this employee's new role?",
+    choices: roleChoices
+  }
+];
+
 function viewEmployeesSimple(cb) {
   const sql = `SELECT
               employee.id,
@@ -248,6 +263,16 @@ function removeEmployee(id) {
   const sql = `DELETE FROM employee WHERE id = ?`;
 
   db.query(sql, id, (err) => {
+    if (err) throw err;
+  });
+};
+
+function updateEmployeeRole(ids) {
+  const sql = `UPDATE employee
+              SET role_id = ?
+              WHERE id = ?`;
+
+  db.query(sql, ids, (err) => {
     if (err) throw err;
   });
 };
@@ -310,6 +335,42 @@ function removeEmployeePrompt() {
         });
         startPrompt();
       });
+  });
+};
+
+function updateEmployeeRolePrompt() {
+  viewEmployeesSimple(rows => {
+    const employeeChoices = rows.map(row => ({
+      name: row.name,
+      value: row.id
+    }));
+
+    viewRoles(rows => {
+      const roleChoices = rows.map(row => ({
+        name: row.title,
+        value: row.id
+      }));
+
+      inquirer
+        .prompt(updateEmployeeRoleQuestionArr(employeeChoices, roleChoices))
+        .then(data => {
+          const params = [
+            data.role,
+            data.name
+          ];
+
+          console.log(data.name);
+          console.log(data.role);
+
+          updateEmployeeRole(params);
+          employeeChoices.map(updatedEmployee => {
+            if (updatedEmployee.value === data.name) {
+              console.log(`Updated ${updatedEmployee.name}'s role successfully!`);
+            }
+          })
+          startPrompt();
+        });
+    });
   });
 };
 
@@ -453,11 +514,11 @@ function removeRolePrompt() {
     inquirer
       .prompt(roleArr(roleChoices))
       .then(data => {
-        const params = [
+        const roleToRemove = [
           data.role
         ];
 
-        removeRole(params);
+        removeRole(roleToRemove);
         roleChoices.map(role => {
           if (role.value === data.role) {
             console.log(`You have deleted the role of ${role.name}.`);
@@ -493,6 +554,7 @@ async function startPrompt() {
       break;
 
     case 'Update Employee Role':
+      updateEmployeeRolePrompt();
       break;
 
     case 'Update Employee Manager':
