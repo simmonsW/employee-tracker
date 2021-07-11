@@ -10,21 +10,13 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// start server after db connection
-// db.connect(err => {
-  // if (err) throw err;
-  // console.log('Database connected.');
-  // app.listen(PORT, () => {
-//     console.log(`server running on port ${PORT}`);
-//   });
-// });
-
 const menuArr = [
   {
     type: 'list',
     name: 'menu',
     message: 'What would you like to do?',
     choices: [
+      "I'm All Done",
       'View All Employees',
       'View All Employees by Department',
       'View All Employees by Manager',
@@ -790,7 +782,22 @@ db.connect(err => {
   if (err) throw err;
   console.log('Database connected.');
   app.listen(PORT, () => {
-    console.log(`server running on port ${PORT}`);
+    // console.log(`server running on port ${PORT}`);
+
+    // I promise it looks right in the terminal!
+    console.log(`
+      ,---------------------------------------.
+      |   ___            _                    |
+      |  | __|_ __  _ __| |___ _  _ ___ ___   |
+      |  | _|| '  \\| '_ \\ / _ \\ || / -_) -_)  |
+      |  |___|_|_|_| .__/_\\___/\\_, \\___\\___|  |
+      |       _____|_|         |__/           |
+      |      |_   _| _ __ _ __| |_____ _ _    |
+      |        | || '_/ _\` / _| / / -_) '_|   |
+      |        |_||_| \\__,_\\__|_\\_\\___|_|     |
+      |                                       |
+      \`---------------------------------------'
+    `);
     startPrompt();
   });
 });
