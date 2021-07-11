@@ -42,6 +42,31 @@ const menuArr = [
   }
 ];
 
+const newDepartmentQuestionArr = [
+  {
+    type: 'input',
+    name: 'department',
+    message: "What is the name of this department?",
+    validate: input => {
+      if (input) {
+        return true;
+      } else {
+        console.log('Please enter the name of the new department.');
+        return false;
+      };
+    }
+  }
+];
+
+const departmentChoicesArr = (departmentChoices) => [
+  {
+    type: 'list',
+    name: 'department',
+    message: 'Which department would you like to remove?',
+    choices: departmentChoices
+  }
+];
+
 function viewAllEmployees() {
   const sql = `SELECT
               employee.id,
@@ -63,12 +88,72 @@ function viewAllEmployees() {
   });
 };
 
-function viewAllDepartments() {
+function viewDepartments(cb) {
   const sql = `SELECT * FROM department`;
   db.query(sql, (err, result) => {
     if (err) throw err;
+    cb(result);
+  });
+};
+
+function viewAllDepartments() {
+  viewDepartments(result => {
     console.table(' ', result);
     startPrompt();
+  });
+};
+
+function addDepartment(value) {
+  const sql = `INSERT INTO department (department_name) VALUES (?)`;
+
+  db.query(sql, value, (err) => {
+    if (err) throw err;
+  });
+};
+
+function removeDepartment(value) {
+  const sql = `DELETE FROM department WHERE id = ?`;
+
+  db.query(sql, value, (err) => {
+    if (err) throw err;
+  });
+};
+
+function addDepartmentPrompt() {
+  inquirer
+    .prompt(newDepartmentQuestionArr)
+    .then(data => {
+      const newDepartment = [
+        data.department
+      ];
+
+      addDepartment(newDepartment);
+      console.log(`${newDepartment} has been created!`);
+      startPrompt();
+    });
+};
+
+function removeDepartmentPrompt() {
+  viewDepartments(rows => {
+    const departmentChoices = rows.map(row => ({
+      name: row.department_name,
+      value: row.id
+    }));
+
+    inquirer.prompt(departmentChoicesArr(departmentChoices))
+      .then(data => {
+        const departmentToRemove = [
+          data.department
+        ];
+
+        removeDepartment(departmentToRemove);
+        departmentChoices.map(dept => {
+          if (dept.value === data.department) {
+            console.log(`You have deleted ${dept.name} from Departments!`);
+          }
+        });
+        startPrompt();
+      });
   });
 };
 
@@ -130,9 +215,11 @@ async function startPrompt() {
       break;
 
     case 'Add Department':
+      addDepartmentPrompt();
       break;
 
     case 'Remove Department':
+      removeDepartmentPrompt();
       break;
   }
 };
