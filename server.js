@@ -208,7 +208,14 @@ function viewByManagerPrompt() {
                     WHERE manager.id = ${managerId}`;
         db.query(sql, managerId, (err, result) => {
           if (err) throw err;
-          console.table(' ', result);
+          // console.table(' ', result);
+          if (result.length === 0) {
+            console.log(' ');
+            console.log('This employee does not manage any employees');
+            console.log('');
+          } else {
+            console.table(' ', result);
+          }
           startPrompt();
         });
       });
