@@ -46,7 +46,7 @@
 
   ## Demo Video
 
-  To see this in action, check out the following demonstration video:
+  To see this application in action, check out the following demonstration video:
 
   ## Collaborators
   Wyatt Simmons
