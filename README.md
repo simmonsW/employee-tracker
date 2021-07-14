@@ -48,5 +48,7 @@
 
   To see this application in action, check out the following demonstration video:
 
+  https://youtu.be/jodcGBJgRyQ
+
   ## Collaborators
   Wyatt Simmons
